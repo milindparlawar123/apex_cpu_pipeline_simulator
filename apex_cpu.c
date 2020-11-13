@@ -12,7 +12,6 @@
 
 #include "apex_cpu.h"
 #include "apex_macros.h"
-
 /* Converts the PC(4000 series) into array index for code memory
  *
  * Note: You are not supposed to edit this function
@@ -73,6 +72,37 @@ print_instruction(const CPU_Stage *stage)
             printf("%s", stage->opcode_str);
             break;
         }
+        case OPCODE_ADDL:
+        case OPCODE_SUBL:
+        {
+            printf("%s,R%d,R%d,#%d ", stage->opcode_str, stage->rd, stage->rs1,
+                   stage->imm);
+            break;
+        }
+        case OPCODE_STR:
+        {
+            printf("%s,R%d,R%d,R%d ", stage->opcode_str, stage->rd, stage->rs1,
+                   stage->rs2);
+            break;
+        }
+        case OPCODE_LDR:
+        {
+            printf("%s,R%d,R%d,#%d ", stage->opcode_str, stage->rd, stage->rs1,
+                   stage->rs2);
+            break;
+        }
+
+        case OPCODE_CMP:
+        {
+            printf("%s,R%d,R%d", stage->opcode_str, stage->rs1, stage->rs2);
+            break;
+        }
+        case OPCODE_NOP:
+        {
+            printf("%s", stage->opcode_str);
+            break;
+        }
+        
     }
 }
 
@@ -127,7 +157,7 @@ APEX_fetch(APEX_CPU *cpu)
     if (cpu->fetch.has_insn)
     {
         /* This fetches new branch target instruction from next cycle */
-        if (cpu->fetch_from_next_cycle == TRUE)
+        if (cpu->fetch_from_next_cycle == TRUE || cpu->fetch_stall == TRUE) 
         {
             cpu->fetch_from_next_cycle = FALSE;
 
@@ -178,31 +208,221 @@ APEX_decode(APEX_CPU *cpu)
     if (cpu->decode.has_insn)
     {
         /* Read operands from register file based on the instruction type */
+
         switch (cpu->decode.opcode)
         {
             case OPCODE_ADD:
             {
+               if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+
                 cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                 cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+        
                 break;
+
+            }
+            case OPCODE_ADDL:
+            {
+               if(cpu->reg_values[cpu->decode.rs1] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+              //  cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+        
+                break;
+
+            }
+             case OPCODE_SUBL:
+            {
+               if(cpu->reg_values[cpu->decode.rs1] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+              //  cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+        
+                break;
+
             }
 
+            case OPCODE_STORE:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                   cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                   cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+
+                //cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                break;
+            }
             case OPCODE_LOAD:
             {
+                if(cpu->reg_values[cpu->decode.rs1] == 0){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+
                 cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                 break;
             }
-
+        
             case OPCODE_MOVC:
             {
                 /* MOVC doesn't have register operands */
                 break;
             }
+            case OPCODE_MUL:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                break;
+            }
+            case OPCODE_SUB:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                break;
+            }
+            case OPCODE_DIV:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                break;
+            }
+            case OPCODE_AND:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                break;
+            }
+            case OPCODE_OR:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                break;
+            }
+            case OPCODE_XOR:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                break;
+            }
+
+            case OPCODE_CMP:
+            {  
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                break;
+            }
+            case OPCODE_LDR:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+                cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                break;
+            }
+            case OPCODE_STR:
+            {
+                if(cpu->reg_values[cpu->decode.rs1] == 0 || cpu->reg_values[cpu->decode.rs2] == 0 || cpu->reg_values[cpu->decode.rd] == 0 ){
+                   cpu->fetch_stall=TRUE;
+                   return;
+               }else{
+                   cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
+                   cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                   cpu->decode.result_buffer = cpu->regs[cpu->decode.rd];
+                 cpu->fetch_stall=FALSE;
+                  // return;  
+               }
+
+                //cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
+                break;
+
+            }
         }
 
         /* Copy data from decode latch to execute latch*/
+        
         cpu->execute = cpu->decode;
         cpu->decode.has_insn = FALSE;
+        
 
         if (ENABLE_DEBUG_MESSAGES)
         {
@@ -228,7 +448,39 @@ APEX_execute(APEX_CPU *cpu)
             {
                 cpu->execute.result_buffer
                     = cpu->execute.rs1_value + cpu->execute.rs2_value;
-
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+            case OPCODE_ADDL:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value + cpu->execute.imm;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+            case OPCODE_SUBL:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value - cpu->execute.imm;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
@@ -243,11 +495,24 @@ APEX_execute(APEX_CPU *cpu)
 
             case OPCODE_LOAD:
             {
+                cpu->reg_values[cpu->execute.rd] =FALSE;
                 cpu->execute.memory_address
                     = cpu->execute.rs1_value + cpu->execute.imm;
+
+                    cpu->reg_values[cpu->execute.rd] =FALSE;
+
+
                 break;
             }
 
+            case OPCODE_STORE:
+            {
+                cpu->execute.memory_address
+                    = cpu->execute.rs2_value + cpu->execute.imm;
+                    //cpu->reg_values[cpu->execute.rd] =FALSE;
+
+                break;
+            }
             case OPCODE_BZ:
             {
                 if (cpu->zero_flag == TRUE)
@@ -291,6 +556,9 @@ APEX_execute(APEX_CPU *cpu)
             case OPCODE_MOVC: 
             {
                 cpu->execute.result_buffer = cpu->execute.imm;
+                //m
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                //m
 
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
@@ -303,6 +571,140 @@ APEX_execute(APEX_CPU *cpu)
                 }
                 break;
             }
+
+            case OPCODE_MUL:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value * cpu->execute.rs2_value;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+
+            case OPCODE_SUB:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value - cpu->execute.rs2_value;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+
+            case OPCODE_DIV:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value / cpu->execute.rs2_value;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+
+             case OPCODE_XOR:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value ^ cpu->execute.rs2_value;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+             case OPCODE_AND:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value & cpu->execute.rs2_value;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+             case OPCODE_OR:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value | cpu->execute.rs2_value;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+            case OPCODE_CMP:
+            {
+                cpu->execute.result_buffer
+                    = cpu->execute.rs1_value - cpu->execute.rs2_value;
+                /* Set the zero flag based on the result buffer */
+                if (cpu->execute.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                break;
+            }
+
+            case OPCODE_LDR:
+            {
+                cpu->execute.memory_address
+                    = cpu->execute.rs1_value + cpu->execute.rs2_value;
+                cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                break;
+            }
+            case OPCODE_STR:
+            {
+
+                cpu->execute.memory_address
+                    = cpu->execute.rs1_value + cpu->execute.rs2_value;
+                //cpu->reg_values[cpu->execute.rd] =FALSE;
+                /* Set the zero flag based on the result buffer */
+                break;
+            }
+           
         }
 
         /* Copy data from execute latch to memory latch*/
@@ -341,6 +743,25 @@ APEX_memory(APEX_CPU *cpu)
                     = cpu->data_memory[cpu->memory.memory_address];
                 break;
             }
+            case OPCODE_STORE:
+            {
+    
+        cpu->data_memory[cpu->memory.memory_address]=cpu->memory.rs1_value;
+                break;
+            }
+            case OPCODE_LDR:
+            {
+                cpu->memory.result_buffer
+                    = cpu->data_memory[cpu->memory.memory_address];
+                break;
+
+            }
+            case OPCODE_STR:
+            {
+                cpu->data_memory[cpu->memory.memory_address]=cpu->memory.result_buffer;
+                break;
+
+            }
         }
 
         /* Copy data from memory latch to writeback latch*/
@@ -370,18 +791,77 @@ APEX_writeback(APEX_CPU *cpu)
             case OPCODE_ADD:
             {
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_ADDL:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_SUBL:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
                 break;
             }
 
             case OPCODE_LOAD:
             {
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
                 break;
             }
 
             case OPCODE_MOVC: 
             {
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_MUL:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_SUB:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_DIV:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_AND:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_OR:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_XOR:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
+                break;
+            }
+            case OPCODE_LDR:
+            {
+                cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
+
+                cpu->reg_values[cpu->writeback.rd]=TRUE;
                 break;
             }
         }
@@ -497,12 +977,12 @@ APEX_cpu_run(APEX_CPU *cpu)
         APEX_fetch(cpu);
 
         print_reg_file(cpu);
-
+//printf("You token: hhhh");
         if (cpu->single_step)
         {
             printf("Press any key to advance CPU Clock or <q> to quit:\n");
-            scanf("%c", &user_prompt_val);
-
+           // scanf("%c", &user_prompt_val);
+user_prompt_val='a';
             if ((user_prompt_val == 'Q') || (user_prompt_val == 'q'))
             {
                 printf("APEX_CPU: Simulation Stopped, cycles = %d instructions = %d\n", cpu->clock, cpu->insn_completed);

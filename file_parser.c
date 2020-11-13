@@ -48,10 +48,18 @@ set_opcode_str(const char *opcode_str)
     {
         return OPCODE_ADD;
     }
+    if (strcmp(opcode_str, "ADDL") == 0)
+    {
+        return OPCODE_ADDL;
+    }
 
     if (strcmp(opcode_str, "SUB") == 0)
     {
         return OPCODE_SUB;
+    }
+    if (strcmp(opcode_str, "SUBL") == 0)
+    {
+        return OPCODE_SUBL;
     }
 
     if (strcmp(opcode_str, "MUL") == 0)
@@ -109,6 +117,24 @@ set_opcode_str(const char *opcode_str)
         return OPCODE_HALT;
     }
 
+    if (strcmp(opcode_str, "LDR") == 0)
+    {
+        return OPCODE_LDR;
+    }
+
+    if (strcmp(opcode_str, "STR") == 0)
+    {
+        return OPCODE_STR;
+    }
+    if (strcmp(opcode_str, "CMP") == 0)
+    {
+        return OPCODE_CMP;
+    }
+    if (strcmp(opcode_str, "NOP") == 0)
+    {
+        return OPCODE_NOP;
+    }
+
     assert(0 && "Invalid opcode");
     return 0;
 }
@@ -126,6 +152,7 @@ split_opcode_from_insn_string(char *buffer, char tokens[2][128])
         token_num++;
         token = strtok(NULL, " ");
     }
+   // printf("You token: %d", token_num);
 }
 
 /*
@@ -204,6 +231,41 @@ create_APEX_instruction(APEX_Instruction *ins, char *buffer)
             ins->imm = get_num_from_string(tokens[0]);
             break;
         }
+        case OPCODE_ADDL:
+        case OPCODE_SUBL:
+        {
+
+            ins->rd = get_num_from_string(tokens[0]);
+            ins->rs1 = get_num_from_string(tokens[1]);
+            ins->imm = get_num_from_string(tokens[2]);
+            break;
+        }
+        case OPCODE_LDR:
+        {
+            ins->rd = get_num_from_string(tokens[0]);
+            ins->rs1 = get_num_from_string(tokens[1]);
+            ins->rs2 = get_num_from_string(tokens[2]);
+            break;
+            
+        }
+        case OPCODE_STR:
+        {
+            ins->rd = get_num_from_string(tokens[0]);
+            ins->rs1 = get_num_from_string(tokens[1]);
+            ins->rs2 = get_num_from_string(tokens[2]);
+            break;
+        }
+        case OPCODE_CMP:
+        {
+            ins->rs1 = get_num_from_string(tokens[0]);
+            ins->rs2 = get_num_from_string(tokens[1]);
+            break;
+        }
+        case OPCODE_NOP:
+        {
+            break;
+        }
+
     }
     /* Fill in rest of the instructions accordingly */
 }
